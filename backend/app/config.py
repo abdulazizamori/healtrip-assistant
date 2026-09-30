@@ -12,6 +12,13 @@ class Settings(BaseSettings):
     # LLM
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.8-flash"
+    # comma-separated; used only while the primary model is out of quota (429) or overloaded (503)
+    gemini_fallback_models: str = "gemini-3.5-flash,gemini-3-flash-preview,gemini-3.5-flash-lite"
+    # Claude: backup provider, used only while every Gemini model is unavailable (optional)
+    anthropic_api_key: str = ""
+    claude_model: str = "claude-opus-5-5"
+    claude_effort: str = "low"  # low keeps a chat turn fast; the server validates every answer regardless
+    claude_timeout_seconds: float = 30.0
     llm_timeout_seconds: float = 25.0
     llm_retries: int = 1
 
@@ -29,6 +36,10 @@ class Settings(BaseSettings):
     max_invalid_outputs_per_turn: int = 2
     max_user_turns_per_session: int = 20
     session_ttl_minutes: int = 60
+
+    @property
+    def fallback_models(self) -> list[str]:
+        return [m.strip() for m in self.gemini_fallback_models.split(",") if m.strip()]
 
     @property
     def origins(self) -> list[str]:

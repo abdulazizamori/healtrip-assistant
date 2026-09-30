@@ -1,8 +1,8 @@
 import type { DoctorCard, HospitalCard, Lang } from "@/lib/api";
-import { languageNames, pick, t } from "@/lib/i18n";
+import { languageNames, locale, pick, t } from "@/lib/i18n";
 
 function formatSlot(iso: string, lang: Lang) {
-  return new Intl.DateTimeFormat(lang === "ar" ? "ar-SA-u-ca-gregory" : "en-GB", {
+  return new Intl.DateTimeFormat(locale[lang], {
     weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
   }).format(new Date(iso));
 }
@@ -16,10 +16,10 @@ export function DoctorCardView({ d, lang }: { d: DoctorCard; lang: Lang }) {
         <span className="muted">{pick(d.specialty, "name", lang)}</span>
       </div>
       <div className="muted">
-        {lang === "ar" ? d.hospital_ar : d.hospital_en} · {pick(d.city, "name", lang)}
+        {pick(d, "hospital", lang)} · {pick(d.city, "name", lang)}
       </div>
       <div className="tags">
-        <span className="tag">{d.years_experience} {s.years}</span>
+        <span className="tag">{s.years(d.years_experience)}</span>
         {d.accepts_second_opinion && <span className="tag">{s.secondOpinion}</span>}
         {d.offers_teleconsult && <span className="tag">{s.tele}</span>}
       </div>

@@ -117,7 +117,7 @@ EMERGENCY_MESSAGES = {
                "call your local emergency number now (Saudi Arabia 997 / 911, Egypt 123, UAE 998) or go to the "
                "nearest emergency department. If someone is with you, ask them to stay with you."),
         "ar": ("ما تصفه قد يكون علامة على حالة طبية طارئة. من فضلك لا تنتظر موعدًا: "
-               "اتصل برقم الطوارئ فورًا (السعودية ٩٩٧ / ٩١١، مصر ١٢٣، الإمارات ٩٩٨) أو توجّه إلى أقرب قسم طوارئ. "
+               "اتصل برقم الطوارئ فورًا (السعودية 997 / 911، مصر 123، الإمارات 998) أو توجّه إلى أقرب قسم طوارئ. "
                "إذا كان معك أحد، اطلب منه أن يبقى بجانبك."),
     },
     "mental_health": {
@@ -125,7 +125,7 @@ EMERGENCY_MESSAGES = {
                "emergency number (Saudi Arabia 997 / 911, Egypt 123, UAE 998) or go to the nearest emergency "
                "department, and if you can, reach out to someone you trust to be with you."),
         "ar": ("أنا آسف جدًا لما تمر به، وأنت تستحق الدعم الآن. من فضلك اتصل برقم الطوارئ "
-               "(السعودية ٩٩٧ / ٩١١، مصر ١٢٣، الإمارات ٩٩٨) أو توجّه إلى أقرب قسم طوارئ، "
+               "(السعودية 997 / 911، مصر 123، الإمارات 998) أو توجّه إلى أقرب قسم طوارئ، "
                "وإن استطعت تواصل مع شخص تثق به ليبقى معك."),
     },
 }

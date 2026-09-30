@@ -33,8 +33,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, "Segoe UI", "Noto Sans Arabic", Tahoma, sans-serif;
-  line-height: 1.55;
+  font-family: var(--font-ui), system-ui, "Segoe UI", Tahoma, sans-serif;
+  line-height: 1.6;
 }
 
 button, textarea { font: inherit; color: inherit; }
@@ -49,16 +49,18 @@ button, textarea { font: inherit; color: inherit; }
   gap: 12px;
 }
 
+/* same layout in both directions: title block at the start edge, actions at the end edge */
 .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.top > div:first-child { flex: 1 1 260px; min-width: 0; }
 .top h1 { margin: 0; font-size: 1.35rem; }
 .top p { margin: 4px 0 0; }
-.top-actions { display: flex; gap: 8px; align-items: center; }
+.top-actions { display: flex; gap: 8px; align-items: center; flex: none; }
 
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
 
 .lang { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
-.lang button { background: transparent; border: 0; padding: 6px 12px; cursor: pointer; }
+.lang button { background: transparent; border: 0; padding: 6px 12px; cursor: pointer; min-width: 52px; }
 .lang button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 
 button.ghost { background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
@@ -101,6 +103,7 @@ button.ghost { background: transparent; border: 1px solid var(--border); border-
 }
 .composer textarea { flex: 1; resize: none; border: 0; outline: none; background: transparent; min-height: 44px; }
 .composer-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.counter { font-variant-numeric: tabular-nums; }
 .composer button[type="submit"] {
   background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 16px; cursor: pointer;
 }

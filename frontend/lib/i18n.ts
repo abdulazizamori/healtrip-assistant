@@ -26,16 +26,19 @@ export const t = {
     options: "Options from the HealTrip network",
     erNearby: "Emergency departments",
     noMatch: "No matching doctors were found in our network for this search.",
-    years: "years",
+    years: (n: number) => `${n} years experience`,
     nextSlot: "Next slot",
-    secondOpinion: "Second opinions",
+    secondOpinion: "Accepts second opinions",
     tele: "Video visits",
-    speaks: "Speaks",
+    speaks: "Languages",
     call: "Call",
+    languageGroup: "Language",
     errors: {
       network_error: "Can't reach the server. Check your connection and try again.",
       too_many_requests: "Too many messages. Please wait a minute.",
       session_turn_limit: "This conversation is long. Please start a new one.",
+      turn_in_progress: "Still answering your last message. Please wait a moment.",
+      message_too_long: "Your message is too long. Please shorten it.",
       generic: "Something went wrong. Please try again.",
     } as Record<string, string>,
     counter: (n: number, max: number) => `${n}/${max}`,
@@ -49,12 +52,12 @@ export const t = {
     thinking: "جارٍ التفكير…",
     examplesTitle: "جرّب مثالًا",
     examples: [
-      "عندي ألم في الصدر ومش عارف أروح لدكتور قلب ولا الطوارئ ولا آخد رأي تاني.",
-      "قالولي محتاج عملية في الركبة وأنا في الرياض، وعايز رأي طبي تاني.",
-      "عندي صداع بقاله ٣ أسابيع وأنا ساكن في القاهرة.",
+      "أشعر بألم في الصدر ولست متأكدًا هل أراجع طبيب قلب، أم أذهب إلى الطوارئ، أم أطلب رأيًا طبيًا ثانيًا.",
+      "أخبرني الطبيب أنني أحتاج إلى عملية في الركبة في الرياض، وأرغب في رأي طبي ثانٍ.",
+      "أعاني من صداع منذ ثلاثة أسابيع وأسكن في القاهرة.",
     ],
     disclaimer:
-      "هذه إرشادات فقط وليست تشخيصًا. في حالة الطوارئ اتصل برقم الطوارئ (السعودية ٩٩٧ / ٩١١، مصر ١٢٣، الإمارات ٩٩٨).",
+      "هذه إرشادات فقط وليست تشخيصًا. في حالة الطوارئ اتصل برقم الطوارئ (السعودية 997 / 911، مصر 123، الإمارات 998).",
     nextStep: {
       EMERGENCY: "توجّه إلى الطوارئ الآن",
       SPECIALIST: "راجع طبيبًا مختصًا",
@@ -65,16 +68,19 @@ export const t = {
     options: "خيارات من شبكة هيل تريب",
     erNearby: "أقسام الطوارئ",
     noMatch: "لم نجد أطباء مطابقين في شبكتنا لهذا البحث.",
-    years: "سنة خبرة",
+    years: (n: number) => `${n} سنة خبرة`,
     nextSlot: "أقرب موعد",
-    secondOpinion: "يقبل الرأي الثاني",
+    secondOpinion: "يقبل الرأي الطبي الثاني",
     tele: "استشارة فيديو",
     speaks: "اللغات",
     call: "اتصال",
+    languageGroup: "اللغة",
     errors: {
       network_error: "تعذّر الاتصال بالخادم. تحقق من الاتصال وحاول مرة أخرى.",
       too_many_requests: "رسائل كثيرة. انتظر دقيقة من فضلك.",
       session_turn_limit: "المحادثة طويلة. ابدأ محادثة جديدة من فضلك.",
+      turn_in_progress: "ما زلت أجيب عن رسالتك السابقة. انتظر لحظة من فضلك.",
+      message_too_long: "رسالتك طويلة جدًا. اختصرها من فضلك.",
       generic: "حدث خطأ. حاول مرة أخرى.",
     } as Record<string, string>,
     counter: (n: number, max: number) => `${n}/${max}`,
@@ -87,6 +93,9 @@ export const languageNames: Record<string, { en: string; ar: string }> = {
   fr: { en: "French", ar: "الفرنسية" },
   ur: { en: "Urdu", ar: "الأردية" },
 };
+
+/** Dates and numbers: Western digits in both languages, matching phone numbers and DB addresses. */
+export const locale: Record<Lang, string> = { en: "en-GB", ar: "ar-SA-u-ca-gregory-nu-latn" };
 
 /** Read `name_ar` / `name_en` (etc.) from a DB row. Localized text comes from the database, not the LLM. */
 export function pick(obj: object, base: string, lang: Lang): string {

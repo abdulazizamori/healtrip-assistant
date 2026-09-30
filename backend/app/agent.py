@@ -109,7 +109,8 @@ class Agent:
                     return self._fallback(session, lang)
                 continue
 
-            session.history.append(Message(role="model", calls=result.calls, raw=result.raw))
+            session.history.append(Message(role="model", calls=result.calls, raw=result.raw,
+                                           provider=result.provider))
             tool_results: list[tuple[ToolCall, dict]] = []
             final: ChatResponse | None = None
 

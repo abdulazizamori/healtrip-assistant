@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from .agent import Agent
 from .config import get_settings
 from .db import Database, load_reference_data
-from .llm import GeminiClient, LLMUnavailable
+from .llm import ClaudeClient, FallbackLLM, GeminiClient, LLMUnavailable
 from .schemas import ChatRequest, ChatResponse, CreateSessionResponse
 from .state import RateLimiter, SessionStore
 
@@ -41,6 +41,25 @@ def _setup_logging() -> None:
 log = logging.getLogger("healtrip.api")
 
 
+def _build_llm(s):
+    """Gemini first (with its own model fallbacks), Claude as the backup provider. Each is optional."""
+    clients = []
+    for name, make in (
+        ("gemini", lambda: GeminiClient(s.gemini_api_key, s.gemini_model, s.llm_timeout_seconds, s.llm_retries,
+                                        fallback_models=s.fallback_models)),
+        ("anthropic", lambda: ClaudeClient(s.anthropic_api_key, s.claude_model, s.claude_timeout_seconds,
+                                           s.llm_retries, effort=s.claude_effort)),
+    ):
+        try:
+            clients.append((name, make()))
+        except LLMUnavailable as e:
+            log.warning("llm_provider_disabled", extra={"provider": name, "reason": str(e)})
+    if not clients:
+        log.error("llm_disabled")
+        return None  # the API still runs: red-flag rules and safe fallbacks keep working
+    return clients[0][1] if len(clients) == 1 else FallbackLLM(clients)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _setup_logging()
@@ -48,16 +67,14 @@ async def lifespan(app: FastAPI):
     db = Database(s.database_url)
     db.open()
     ref = load_reference_data(db)
-    try:
-        llm = GeminiClient(s.gemini_api_key, s.gemini_model, s.llm_timeout_seconds, s.llm_retries)
-    except LLMUnavailable as e:
-        log.error("llm_disabled", extra={"reason": str(e)})
-        llm = None  # the API still runs: red-flag rules and safe fallbacks keep working
+    llm = _build_llm(s)
     app.state.db = db
     app.state.agent = Agent(llm, db, ref, s)
     app.state.sessions = SessionStore(s.session_ttl_minutes)
     app.state.limiter = RateLimiter(s.rate_limit_per_minute)
-    log.info("startup", extra={"model": s.gemini_model, "llm_enabled": llm is not None,
+    log.info("startup", extra={"model": s.gemini_model, "fallback_models": s.fallback_models,
+                               "claude_model": s.claude_model if s.anthropic_api_key else None,
+                               "llm_enabled": llm is not None,
                                "cities": len(ref.cities), "specialties": len(ref.specialties)})
     yield
     db.close()

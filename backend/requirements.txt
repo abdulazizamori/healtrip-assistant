@@ -5,6 +5,7 @@ psycopg-pool==3.3.3
 pydantic==2.13.3
 pydantic-settings==2.14.0
 google-genai==2.25.0
+anthropic==1.9.0
 
 # tests
 pytest==9.1.1

@@ -72,6 +72,14 @@ DATABASE_URL=postgresql://healtrip_agent_ro:readonly_dev_password@localhost:5432
 No API key? The app still starts: red-flag detection and emergency guidance keep working, and other messages get a safe
 "temporarily unavailable" reply. `GEMINI_MODEL` selects the model (default `gemini-3.8-flash`).
 
+`GEMINI_FALLBACK_MODELS` (default `gemini-3.5-flash,gemini-3-flash-preview,gemini-3.5-flash-lite`) are used only while the
+primary model is out of quota (429) or overloaded (503). This matters on Google's free tier, which allows roughly
+5 requests/minute and 20 requests/day **per model** — a single patient turn can take 2–4 model calls.
+
+**Optional backup provider:** set `ANTHROPIC_API_KEY` (https://console.anthropic.com) and Claude (`CLAUDE_MODEL`, default
+`claude-opus-5-5`) takes over whenever every Gemini model is unavailable — including a full Google outage. Without the
+key the app simply runs on Gemini alone.
+
 ---
 
 ## 2. Architecture
@@ -133,7 +141,7 @@ sequenceDiagram
 | Choice | Why |
 |---|---|
 | FastAPI + Pydantic | Every boundary (HTTP body, tool arguments, model output) is a typed model — validation is declarative and the error messages are good enough to send back to the LLM. |
-| Gemini via a thin `LLMClient` interface | Provider is swappable (`app/llm.py`); tests use a scripted fake model, so every guardrail is tested without network or keys. |
+| Gemini via a thin `LLMClient` interface | Provider is swappable (`app/llm.py`); tests use a scripted fake model, so every guardrail is tested without network or keys. The same interface carries a second provider: `FallbackLLM` chains Gemini → Claude. |
 | PostgreSQL | Relational data with real relationships (many-to-many languages), indexes on the exact filters the agent uses, and role-based permissions for least privilege. |
 | Next.js (App Router) | Simple client page; `dir`/`lang` switch at runtime; CSS uses logical properties so one stylesheet serves LTR and RTL. |
 | In-memory sessions & rate limiter | Enough for a single-instance prototype. The interface is small so it moves to Redis for horizontal scaling. |
@@ -349,7 +357,10 @@ abusive tool calls, every one is rejected, no query runs, and the patient gets t
 | Failure | Behaviour |
 |---|---|
 | Red flag detected | Fixed emergency text + ER hospitals from DB — **works even when the LLM is down** (graceful degradation) |
-| LLM timeout / 5xx / 429 / network | Timeout per call, 1 retry, then safe fallback |
+| LLM quota exhausted (429) / overloaded (503) | Model is parked for 60 s and the call moves to the next model in `GEMINI_FALLBACK_MODELS` (does not use up the retry). Every model's output goes through the same validation, so a weaker fallback model cannot lower the safety bar — at worst it fails validation and the patient gets the safe fallback |
+| Every Gemini model unavailable | `FallbackLLM` moves to Claude (if `ANTHROPIC_API_KEY` is set) and skips Gemini for 60 s. A turn stays on the provider that started it, so one turn never mixes two providers' native history formats. Claude answers go through exactly the same validation |
+| Claude safety classifier declines | Server-side `fallbacks: "default"` re-runs it on Anthropic's recommended model; if the whole chain declines → safe fallback |
+| LLM timeout / other 5xx / network | Timeout per call, 1 retry, then safe fallback |
 | Model returns invalid arguments or output | Exact error sent back to the model, max 2 corrections per turn, then fallback |
 | Model returns no tool call | Counted as invalid output (same budget) |
 | Model loops on tools | Max 6 steps per turn, then fallback |
@@ -365,7 +376,10 @@ removed from history so a retry starts clean.
 
 ## 10. Arabic / English
 
-- UI toggle switches `lang` and `dir` on `<html>`; CSS uses logical properties (`margin-inline`, `text-align: start`), so one stylesheet serves both directions.
+- UI toggle switches `lang` and `dir` on `<html>`; CSS uses logical properties (`margin-inline`, `text-align: start`), so one stylesheet serves both directions. The Arabic layout is an exact mirror of the English one, not a separate design.
+- **One typeface for both scripts** (IBM Plex Sans Arabic, which includes Latin), so both languages have the same size, weight and line height.
+- **Western digits (0–9) in both languages** — UI, dates (`ar-SA-u-nu-latn`), DB addresses and emergency numbers — to match phone numbers, which are always Western and are wrapped in `<bdi dir="ltr">` so they never flip in RTL.
+- Every UI string exists in both languages with the same meaning (`lib/i18n.ts`); the placeholder follows the UI direction while typed text uses `dir="auto"`. The chosen language is remembered per browser.
 - The assistant **replies in the language the patient writes in** (detected per message; falls back to the UI language for "35" or "ok").
 - Red-flag rules understand English, Modern Standard Arabic and Egyptian dialect (Arabic text is normalized: diacritics, alef/ya/ta-marbuta variants).
 - Doctor/hospital/specialty names come from `name_ar` / `name_en` columns — the model never translates names.
@@ -374,13 +388,15 @@ removed from history so a retry starts clean.
 
 ## 11. Tests
 
-`backend/tests` — **44 tests** against a real PostgreSQL with the read-only role, and a scripted fake model:
+`backend/tests` — **54 tests** against a real PostgreSQL with the read-only role, and a scripted fake model:
 
 - **Safety rules:** emergencies in EN/AR (including red flags split across turns), no false alarms on routine cases, self-harm handled separately.
 - **Grounding:** invented ID rejected then corrected; a *real* ID never searched in this session rejected; invented name/phone in text rejected; wrong specialty rejected; second opinion only with doctors who accept it; empty search → no doctors.
 - **Injection / abuse:** oversized limit, SQL-ish enum value, unknown tool, extra arguments — all rejected before any query.
 - **Limits & failures:** question cap enforced by removing the tool; LLM down → safe fallback with clean history; no LLM configured → emergencies still caught.
 - **HTTP:** validation errors, unknown session, message too long, rate limiting, no stack traces.
+- **Model fallback:** quota/overload switches model without using the retry; other errors don't switch; all models exhausted → `LLMUnavailable`.
+- **Provider chain (Gemini → Claude):** failed provider is parked and the backup answers; a turn stays on its provider; Claude gets only the allowed tools as strict schemas; calls rebuilt from Gemini get matching tool IDs; refusals and API errors become `LLMUnavailable`.
 
 ---
 
@@ -390,6 +406,8 @@ removed from history so a retry starts clean.
 - **Red-flag rules were written by an engineer** from public first-aid guidance to demonstrate the mechanism. In production they must be written and signed off by clinicians and tuned to over-triage.
 - **All data is fictional.** Slot times are generated relative to "now".
 - Emergency numbers shown: Saudi Arabia 997 / 911, Egypt 123, UAE 998 — should be localized and verified per market.
+- **Gemini free tier is very small** (about 5 requests/minute and 20/day per model). The fallback chain stretches it for a demo; a real deployment needs a paid key, or the Claude backup.
+- **Claude can't be forced to call a tool** (`claude-opus-5-5` rejects forced `tool_choice`), so on Claude the "always answer with a tool" rule comes from the system prompt; a reply without a tool call is caught by the same check as Gemini's and counted as invalid output.
 - Sessions and rate limits are in memory (single instance). Restarting the API clears sessions; the UI recovers automatically.
 - No authentication: patients are anonymous in this prototype.
 - Keyword rules can miss unusual phrasing, which is why the model can also choose `EMERGENCY` and the prompt says "when in doubt, choose the safer step".
@@ -421,11 +439,11 @@ backend/app/
   agent.py               agent loop, system prompt, output validation, hydration, fallbacks
   tools.py               tool schemas, argument validation, grounding checks
   safety.py              red-flag rules (EN/AR), language detection, fixed emergency/fallback text
-  llm.py                 provider interface + Gemini client (timeout, retry, mode=ANY)
+  llm.py                 provider interface, Gemini client (model fallback, mode=ANY), Claude client, provider chain
   db.py                  connection pool + every SQL query (parameterized)
   state.py               sessions (TTL) and rate limiter
   schemas.py             API contract
-backend/tests/           44 tests (safety, agent guardrails, HTTP)
+backend/tests/           54 tests (safety, agent guardrails, model/provider fallback, HTTP)
 frontend/
   app/page.tsx           chat UI, AR/EN toggle, response types
   components/Cards.tsx   doctor / hospital cards (rendered from DB fields)

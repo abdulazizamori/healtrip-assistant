@@ -23,13 +23,13 @@ INSERT INTO languages (code, name_en, name_ar) VALUES
  ('ur', 'Urdu',    'الأردية');
 
 INSERT INTO hospitals (name_en, name_ar, city_id, address_en, address_ar, phone, has_emergency) VALUES
- ('Sahil Care Hospital',        'مستشفى ساحل كير',          (SELECT id FROM cities WHERE code='jeddah'), '12 Demo St, Al Rawdah, Jeddah',    '١٢ شارع تجريبي، الروضة، جدة',        '+966-12-000-0001', TRUE),
- ('Qamar Heart Institute',      'معهد قمر للقلب',            (SELECT id FROM cities WHERE code='jeddah'), '40 Demo Rd, Al Salamah, Jeddah',   '٤٠ طريق تجريبي، السلامة، جدة',       '+966-12-000-0002', FALSE),
- ('Najd Medical City',          'مدينة نجد الطبية',          (SELECT id FROM cities WHERE code='riyadh'), '7 Demo Ave, Al Olaya, Riyadh',     '٧ جادة تجريبية، العليا، الرياض',     '+966-11-000-0003', TRUE),
- ('Wadi Clinics',               'عيادات وادي',               (SELECT id FROM cities WHERE code='riyadh'), '88 Demo St, Al Malqa, Riyadh',     '٨٨ شارع تجريبي، الملقا، الرياض',     '+966-11-000-0004', FALSE),
- ('Nile Valley Hospital',       'مستشفى وادي النيل',         (SELECT id FROM cities WHERE code='cairo'),  '3 Demo St, Zamalek, Cairo',        '٣ شارع تجريبي، الزمالك، القاهرة',    '+20-2-0000-0005',  TRUE),
- ('Mokattam Specialist Center', 'مركز المقطم التخصصي',       (SELECT id FROM cities WHERE code='cairo'),  '21 Demo Rd, Mokattam, Cairo',      '٢١ طريق تجريبي، المقطم، القاهرة',    '+20-2-0000-0006',  FALSE),
- ('Creek Health Hospital',      'مستشفى كريك الصحي',         (SELECT id FROM cities WHERE code='dubai'),  '5 Demo Blvd, Bur Dubai, Dubai',    '٥ بوليفارد تجريبي، بر دبي، دبي',     '+971-4-000-0007',  TRUE);
+ ('Sahil Care Hospital',        'مستشفى ساحل كير',          (SELECT id FROM cities WHERE code='jeddah'), '12 Demo St, Al Rawdah, Jeddah',    '12 شارع تجريبي، الروضة، جدة',        '+966-12-000-0001', TRUE),
+ ('Qamar Heart Institute',      'معهد قمر للقلب',            (SELECT id FROM cities WHERE code='jeddah'), '40 Demo Rd, Al Salamah, Jeddah',   '40 طريق تجريبي، السلامة، جدة',       '+966-12-000-0002', FALSE),
+ ('Najd Medical City',          'مدينة نجد الطبية',          (SELECT id FROM cities WHERE code='riyadh'), '7 Demo Ave, Al Olaya, Riyadh',     '7 جادة تجريبية، العليا، الرياض',     '+966-11-000-0003', TRUE),
+ ('Wadi Clinics',               'عيادات وادي',               (SELECT id FROM cities WHERE code='riyadh'), '88 Demo St, Al Malqa, Riyadh',     '88 شارع تجريبي، الملقا، الرياض',     '+966-11-000-0004', FALSE),
+ ('Nile Valley Hospital',       'مستشفى وادي النيل',         (SELECT id FROM cities WHERE code='cairo'),  '3 Demo St, Zamalek, Cairo',        '3 شارع تجريبي، الزمالك، القاهرة',    '+20-2-0000-0005',  TRUE),
+ ('Mokattam Specialist Center', 'مركز المقطم التخصصي',       (SELECT id FROM cities WHERE code='cairo'),  '21 Demo Rd, Mokattam, Cairo',      '21 طريق تجريبي، المقطم، القاهرة',    '+20-2-0000-0006',  FALSE),
+ ('Creek Health Hospital',      'مستشفى كريك الصحي',         (SELECT id FROM cities WHERE code='dubai'),  '5 Demo Blvd, Bur Dubai, Dubai',    '5 بوليفارد تجريبي، بر دبي، دبي',     '+971-4-000-0007',  TRUE);
 
 -- helper: doctors reference hospital/specialty by name/code to keep the seed readable
 INSERT INTO doctors (name_en, name_ar, specialty_id, hospital_id, years_experience, accepts_second_opinion, offers_teleconsult)

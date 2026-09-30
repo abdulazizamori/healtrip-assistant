@@ -70,7 +70,9 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new ApiError(res.status, String(data.detail ?? data.error ?? "request_failed"));
+      // "message_too_long (max 1000 characters)" -> "message_too_long"; the UI maps codes to localized text
+      const detail = typeof data.detail === "string" ? data.detail : String(data.error ?? "request_failed");
+      throw new ApiError(res.status, detail.split(" ")[0]);
     }
     return (await res.json()) as T;
   } catch (e) {

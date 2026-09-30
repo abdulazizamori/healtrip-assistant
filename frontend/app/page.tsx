@@ -6,6 +6,7 @@ import { api, ApiError, type ChatResponse, type Lang } from "@/lib/api";
 import { t } from "@/lib/i18n";
 
 const MAX_CHARS = 1000;
+const LANG_KEY = "healtrip.lang";
 
 type Item =
   | { id: number; role: "user"; text: string }
@@ -23,12 +24,26 @@ export default function ChatPage() {
   const endRef = useRef<HTMLDivElement>(null);
   const s = t[lang];
 
+  // remember the chosen language (per browser); read after mount so server and client HTML match
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(LANG_KEY);
+      if (saved === "ar" || saved === "en") setLang(saved);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LANG_KEY, lang);
+    } catch {}
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
   }, [lang]);
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [items, busy]);
+  // braces matter: newer Chrome returns a Promise from scrollIntoView, and React would call it as a cleanup
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [items, busy]);
 
   async function ensureSession(forceNew = false): Promise<string> {
     if (sessionId && !forceNew) return sessionId;
@@ -84,9 +99,9 @@ export default function ChatPage() {
         </div>
         <div className="top-actions">
           <button className="ghost" onClick={reset} disabled={busy}>{s.newChat}</button>
-          <div className="lang" role="group" aria-label="Language">
-            <button aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button>
-            <button aria-pressed={lang === "ar"} onClick={() => setLang("ar")}>عربي</button>
+          <div className="lang" role="group" aria-label={s.languageGroup}>
+            <button aria-pressed={lang === "en"} onClick={() => setLang("en")} lang="en">EN</button>
+            <button aria-pressed={lang === "ar"} onClick={() => setLang("ar")} lang="ar">عربي</button>
           </div>
         </div>
       </header>
@@ -122,7 +137,7 @@ export default function ChatPage() {
           value={input}
           maxLength={MAX_CHARS}
           placeholder={s.placeholder}
-          dir="auto"
+          dir={input ? "auto" : lang === "ar" ? "rtl" : "ltr"}
           rows={2}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -133,7 +148,7 @@ export default function ChatPage() {
           }}
         />
         <div className="composer-side">
-          <span className="muted small">{s.counter(input.length, MAX_CHARS)}</span>
+          <span className="muted small counter" dir="ltr">{s.counter(input.length, MAX_CHARS)}</span>
           <button type="submit" disabled={busy || !input.trim()}>{s.send}</button>
         </div>
       </form>
