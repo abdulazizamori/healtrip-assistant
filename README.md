@@ -4,6 +4,9 @@ A patient describes what they feel. The assistant asks only the questions that c
 picks **one next step** (emergency / specialist / second opinion / general doctor), and shows matching
 doctors or hospitals **from the database** — in Arabic or English.
 
+**Live demo:** https://healtrip.onrender.com — free hosting: if it has been idle, the first load takes about a minute
+to wake up. All doctors, hospitals and phone numbers are fictional.
+
 > **Design goal:** the model reasons, the database knows. The model can never put a doctor, hospital,
 > phone number or address in front of a patient that did not come from the database in this conversation.
 
