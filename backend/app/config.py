@@ -24,6 +24,11 @@ class Settings(BaseSettings):
 
     # Database — the API connects with the READ-ONLY role
     database_url: str = "postgresql://healtrip_agent_ro:readonly_dev_password@localhost:5432/healtrip"
+    # Single-service hosting only (Render): the owner URL is used once at startup to create the schema and the
+    # read-only role (app/bootstrap.py); the app itself then connects as the read-only role.
+    admin_database_url: str = ""
+    db_sql_dir: str = "/app/db"
+    static_dir: str = "/app/static"  # exported frontend, served at / when present
 
     # HTTP
     allowed_origins: str = "http://localhost:3000"  # comma-separated

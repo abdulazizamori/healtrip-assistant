@@ -50,6 +50,7 @@ export interface ChatResponse {
   disclaimer: boolean;
 }
 
+// "" = same origin (single-service deploy, API serves the page); unset = local API on :8000
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {

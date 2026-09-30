@@ -80,6 +80,14 @@ primary model is out of quota (429) or overloaded (503). This matters on Google'
 `claude-opus-5-5`) takes over whenever every Gemini model is unavailable — including a full Google outage. Without the
 key the app simply runs on Gemini alone.
 
+**Hosted demo (Render):** `render.yaml` + the root `Dockerfile` deploy **one** web service and a PostgreSQL database.
+The frontend is exported as static files and served by the API on the same origin (no CORS, one service to wake up).
+Render → *New* → *Blueprint* → pick this repo → paste `GEMINI_API_KEY` (optionally `ANTHROPIC_API_KEY`).
+There is no init container, so on first boot `app/bootstrap.py` uses the owner URL once to create the schema and seed
+data, then (re)creates the `SELECT`-only role with a fresh random password on every start; the app connects as that role.
+Free-plan caveats: the service sleeps after ~15 min idle (first request after a pause takes ~1 minute) and the free
+database expires after 30 days.
+
 ---
 
 ## 2. Architecture

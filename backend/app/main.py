@@ -8,13 +8,16 @@ The agent's tools are NOT endpoints: they are internal functions only the agent 
 import json
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from .agent import Agent
+from .bootstrap import bootstrap
 from .config import get_settings
 from .db import Database, load_reference_data
 from .llm import ClaudeClient, FallbackLLM, GeminiClient, LLMUnavailable
@@ -64,7 +67,9 @@ def _build_llm(s):
 async def lifespan(app: FastAPI):
     _setup_logging()
     s = get_settings()
-    db = Database(s.database_url)
+    # single-service hosting: create schema/seed and a fresh read-only role, then connect as that role
+    db_url = bootstrap(s.admin_database_url, s.db_sql_dir) if s.admin_database_url else s.database_url
+    db = Database(db_url)
     db.open()
     ref = load_reference_data(db)
     llm = _build_llm(s)
@@ -139,3 +144,9 @@ def chat(body: ChatRequest, request: Request):
         return request.app.state.agent.handle_turn(session, message, body.ui_language)
     finally:
         session.lock.release()
+
+
+# Single-service hosting: the statically exported frontend is served from the same origin as the API
+# (no CORS, one service to wake up). Mounted last so every /api route above takes precedence.
+if Path(get_settings().static_dir).is_dir():
+    app.mount("/", StaticFiles(directory=get_settings().static_dir, html=True), name="web")

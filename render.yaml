@@ -1,0 +1,32 @@
+# Render Blueprint: one web service (API + static frontend) and a PostgreSQL database.
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repo -> paste GEMINI_API_KEY (and optionally ANTHROPIC_API_KEY).
+
+databases:
+  - name: healtrip-db
+    plan: free
+    databaseName: healtrip
+    postgresMajorVersion: "17"
+
+services:
+  - type: web
+    name: healtrip
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # owner credentials: used once at startup to create the schema and the read-only role (app/bootstrap.py)
+      - key: ADMIN_DATABASE_URL
+        fromDatabase:
+          name: healtrip-db
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_FALLBACK_MODELS
+        value: gemini-3.5-flash,gemini-3-flash-preview,gemini-3.5-flash-lite
